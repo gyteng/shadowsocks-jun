@@ -8,7 +8,6 @@ telegram.on('message', message => {
   auth
 
   list
-  add
   del {port}
   add {port} {password}
   pwd {port} {password}
