@@ -137,6 +137,7 @@ const send = async (data, options) => {
         host: ip,
         port: options.port,
         password: options.password,
+        // availableToDate: options.availableToDate,
       }).catch(err => {
         return null;
       });
@@ -205,6 +206,27 @@ const send = async (data, options) => {
         return { port: +m, password: ports[m].password };
       });
       return successMark ? ret : Promise.reject();
+    } else if (data.command === 'checkSub') {
+      let successMark = false;
+      const availablePorts = {};
+      results.forEach((res) => {
+        if (res) {
+          successMark = true;
+          res.forEach((f) => {
+            if (!availablePorts[f.port]) {
+              availablePorts[f.port] = { availableToDate: f.availableToDate, number: 1 };
+            } else {
+              availablePorts[f.port].number += 1;
+            }
+          })
+        }
+        const ret = Object.keys(availablePorts).filter(f => {
+          return availablePorts[f].number >= results.filter(f => f).length;
+        }).map(m => {
+          return { port: +m, availableToDate: availablePorts[m].availableToDate };
+        });
+        return successMark ? ret : Promise.reject();
+      })
     } else {
       const random = (+Math.random().toString().substr(2, 8)) % results.length;
       return results[random];

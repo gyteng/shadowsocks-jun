@@ -238,14 +238,14 @@ const checkPortRange = (port) => {
   return isInRange;
 };
 
-const addAccount = async (port, password) => {
+const addAccount = async (port, password, availableToDate) => {
   try {
     if(!checkPortRange(port)) {
       return Promise.reject('error');
     }
     await sendMessage(`add: {"server_port": ${ port }, "password": "${ password }"}`);
-    await knex('account').insert({ port, password });
-    return { port, password };
+    await knex('account').insert({ port, password, availableToDate });
+    return { port, password, availableToDate };
   } catch(err) {
     return Promise.reject('error');
   }
@@ -285,9 +285,37 @@ const changePassword = async (port, password) => {
   }
 };
 
+const changeAvailability = async (port, availableToDate) => {
+  try {
+    const updateAccount = await knex('account').where({ port }).update({
+      availableToDate,
+    });
+    if(updateAccount <= 0) {
+      return Promise.reject('error');
+    }
+    return { port, availableToDate };
+  } catch(err) {
+    return Promise.reject('error');
+  }
+};
+
+const checkSubscription = async () => {
+  try {
+    const accounts = await knex('account').select([ 'port', 'password', 'availableToDate' ]);
+    accounts.forEach(async (acc) => {
+      const isAvailable = new Date.now() < new new Date(acc.availableToDate);
+      if (!isAvailable) {
+        await sendMessage(`remove: {"server_port": ${ acc.port }}`);
+      }
+    })
+  } catch(err) {
+    return Promise.reject('error');
+  }
+};
+
 const listAccount = async () => {
   try {
-    const accounts = await knex('account').select([ 'port', 'password' ]);
+    const accounts = await knex('account').select([ 'port', 'password', 'availableToDate' ]);
     return accounts;
   } catch(err) {
     return Promise.reject('error');
@@ -407,6 +435,8 @@ const getClientIp = port => {
 exports.addAccount = addAccount;
 exports.removeAccount = removeAccount;
 exports.changePassword = changePassword;
+exports.changeAvailability = changeAvailability;
+exports.checkSubscription = checkSubscription;
 exports.listAccount = listAccount;
 exports.getFlow = getFlow;
 exports.getVersion = getVersion;

@@ -41,7 +41,8 @@ const receiveCommand = async (data, code) => {
     if(message.command === 'add') {
       const port = +message.port;
       const password = message.password;
-      return shadowsocks.addAccount(port, password);
+      const availableToDate = message.availableToDate;
+      return shadowsocks.addAccount(port, password, availableToDate);
     } else if (message.command === 'del') {
       const port = +message.port;
       return shadowsocks.removeAccount(port);
@@ -58,6 +59,8 @@ const receiveCommand = async (data, code) => {
       return shadowsocks.getVersion();
     } else if (message.command === 'ip') {
       return shadowsocks.getClientIp(message.port);
+    } else if (message.command === 'checkSub') {
+      return shadowsocks.checkSubscription();
     } else {
       return Promise.reject('invalid command');
     }
